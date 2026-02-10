@@ -1,0 +1,48 @@
+let user = JSON.parse(localStorage.getItem("user")||'{"name":"Student","email":"","xp":0,"streak":0}');
+let amb = new Audio();
+
+// AI Study Assistant
+async function answer(){
+  ans.innerText = "Thinking...";
+  const prompt = `
+You are a student-friendly AI tutor.
+Explain clearly, step by step.
+Language: ${lang.value==="bn"?"Bangla":"English"}
+Question: ${q.value}
+`;
+  try{
+    const res = await fetch("https://api-inference.huggingface.co/models/google/flan-t5-large",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({inputs:prompt})
+    });
+    const data = await res.json();
+    ans.innerText = data[0]?.generated_text || "No response.";
+    addXP(10);
+  }catch{
+    ans.innerText = "Free AI limit reached. Try later.";
+  }
+}
+
+// Notes
+function notes(){ noteOut.innerText="📌 Key points only\n• Compact\n• Exam focused"; }
+function saveNotes(){ localStorage.setItem("notes",noteIn.value); alert("Notes saved!"); }
+function downloadNotes(){ const blob=new Blob([noteIn.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="notes.txt"; a.click(); }
+
+// XP & Daily Streak
+function addXP(n){ user.xp+=n; updateStreak(); saveUser(); }
+function updateStreak(){ const today=new Date().toDateString(); if(localStorage.getItem("lastLogin")!==today){ user.streak++; localStorage.setItem("lastLogin",today);} }
+function saveUser(){ localStorage.setItem("user",JSON.stringify(user)); updateProfile(); }
+function updateProfile(){ profileName.innerText="Name: "+user.name; profileEmail.innerText="Email: "+user.email; profileXP.innerText="XP: "+user.xp; profileStreak.innerText="Daily Streak: "+user.streak+" days"; document.getElementById("xpProgress").style.width=Math.min(user.xp,100)+"%"; }
+
+// Ambient Sounds
+function playAmbient(type){
+  const urls = {
+    "river": "/assets/river.mp3",
+    "wind": "/assets/wind.mp3",
+    "rain": "/assets/rain.mp3",
+    "islamic": "/assets/islamic.mp3"
+  };
+  amb.src = urls[type]; amb.loop = true; amb.play();
+}
+function stopAmbient(){ amb.pause(); }
