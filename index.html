@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MindFlow.AI - Study PWA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+body{margin:0;font-family:system-ui;background:#f3f4f6}
+header{background:#1e3a8a;color:#fff;padding:14px;text-align:center}
+nav{display:flex;flex-wrap:wrap;background:#e5e7eb}
+nav button{flex:1;padding:10px;border:none;background:#e5e7eb;cursor:pointer}
+nav button:hover{background:#dbeafe}
+section{display:none;padding:16px;max-width:900px;margin:auto}
+.active{display:block}
+.card{background:#fff;padding:16px;margin-bottom:16px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+input,textarea,select{width:100%;padding:8px;margin:6px 0}
+button.main{background:#2563eb;color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer}
+.output{white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;padding:10px;border-radius:4px}
+.timer{font-size:28px;text-align:center;margin:10px 0}
+.center{text-align:center}
+.audioControl{margin:10px 0;text-align:center}
+.floatingAssist{position:fixed;bottom:20px;right:20px;background:#2563eb;color:#fff;padding:12px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+.progressBarContainer{width:100%;background:#e5e7eb;border-radius:6px;margin:10px 0}
+.progressBar{height:20px;background:#2563eb;border-radius:6px;width:0%}
+.streakAnimation{color:#2563eb;font-weight:bold}
+</style>
+</head>
+<body>
+
+<header>
+  <h2>📘 MindFlow.AI</h2>
+  <p id="userInfo">Free • Halal • Student Friendly</p>
+</header>
+
+<section id="auth" class="active">
+  <div class="card">
+    <h3>Login / Register</h3>
+    <input id="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+    <input id="username" placeholder="Display Name">
+    <button class="main" onclick="login()">Login / Register</button>
+  </div>
+</section>
+
+<nav id="nav" style="display:none">
+  <button onclick="show('study')">🧠 Study</button>
+  <button onclick="show('notes')">📝 Notes</button>
+  <button onclick="show('pomodoro')">⏱️ Pomodoro</button>
+  <button onclick="show('islamic')">☪️ Islamic</button>
+  <button onclick="show('ambient')">🎧 Ambient</button>
+  <button onclick="show('profile')">👤 Profile</button>
+  <button onclick="logout()">🚪 Logout</button>
+</nav>
+
+<!-- Study Section -->
+<section id="study">
+  <div class="card">
+    <h3>AI Study Assistant</h3>
+    <select id="lang">
+      <option value="en">English</option>
+      <option value="bn">বাংলা</option>
+    </select>
+    <textarea id="q" rows="4" placeholder="Ask or enter topic..."></textarea>
+    <button class="main" onclick="answer()">Generate</button>
+    <div id="ans" class="output"></div>
+  </div>
+</section>
+
+<!-- Notes Section -->
+<section id="notes">
+  <div class="card">
+    <h3>Compact Notes Generator</h3>
+    <textarea id="noteIn" rows="4"></textarea>
+    <button class="main" onclick="notes()">Generate Notes</button>
+    <button class="main" onclick="saveNotes()">💾 Save Notes</button>
+    <button class="main" onclick="downloadNotes()">⬇️ Download Notes</button>
+    <div id="noteOut" class="output"></div>
+  </div>
+</section>
+
+<!-- Pomodoro -->
+<section id="pomodoro">
+  <div class="card center">
+    <h3>Pomodoro Focus</h3>
+    <div class="timer" id="time">25:00</div>
+    <button class="main" onclick="start()">Start</button>
+    <button class="main" onclick="reset()">Reset</button>
+  </div>
+</section>
+
+<!-- Islamic Tips -->
+<section id="islamic">
+  <div class="card">
+    <h3>Islamic Hub</h3>
+    <div class="output">
+✔ Learning is Ibadah  
+✔ Be honest, be kind  
+✔ Avoid unethical shortcuts  
+    </div>
+  </div>
+</section>
+
+<!-- Ambient -->
+<section id="ambient">
+  <div class="card">
+    <h3>Ambient Sounds</h3>
+    <div class="audioControl">
+      <button class="main" onclick="playAmbient('river')">🌊 River & Birds</button>
+      <button class="main" onclick="playAmbient('wind')">🌬️ Wind Breeze</button>
+      <button class="main" onclick="playAmbient('rain')">🌧️ Rain Drops</button>
+      <button class="main" onclick="playAmbient('islamic')">🕌 Calming Islamic</button>
+      <button class="main" onclick="stopAmbient()">⏹️ Stop</button>
+    </div>
+  </div>
+</section>
+
+<!-- User Profile & Streaks -->
+<section id="profile">
+  <div class="card">
+    <h3>User Profile</h3>
+    <p id="profileName"></p>
+    <p id="profileEmail"></p>
+    <p id="profileXP"></p>
+    <p id="profileStreak" class="streakAnimation"></p>
+    <div class="progressBarContainer">
+      <div class="progressBar" id="xpProgress"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Floating Assist -->
+<div class="floatingAssist" onclick="show('study')">💡</div>
+
+<script src="ai.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js');
+}
+
+let user={};
+function login(){
+  const e=email.value,p=pass.value,u=username.value||"Student";
+  if(!e||!p) return alert("Fill all fields");
+  user={email:e,name:u,xp:0,streak:0};
+  localStorage.setItem("user",JSON.stringify(user));
+  auth.style.display="none"; nav.style.display="flex";
+  show("study"); updateProfile();
+}
+
+function logout(){ localStorage.removeItem("user"); location.reload(); }
+
+if(localStorage.getItem("user")){
+  user=JSON.parse(localStorage.getItem("user"));
+  auth.style.display="none"; nav.style.display="flex";
+  show("study"); updateProfile();
+}
+
+function show(id){
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+</script>
+</body>
+  </html>
